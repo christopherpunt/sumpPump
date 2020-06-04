@@ -1,7 +1,6 @@
 import time
 import paho.mqtt.client as mqtt
-import pigpio
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 import send_emails
 
 BROKER = 'iot.cs.calvin.edu'
@@ -22,15 +21,19 @@ state = operational
 stateList = [operational, powerOutage, internetOutage]
 
 #constants
-FLOAT1 = 21
+FLOATLOW = 21
+FLOATMID = 20
+FLOATHIGH = 16
+FLOATOVER = 26
 glitchFilter = 100
 
-pi = pigpio.pi()
-
-pi.set_mode(FLOAT1, pigpio.INPUT)
-pi.set_pull_up_down(FLOAT1, pigpio.PUD_DOWN)
-pi.set_glitch_filter(FLOAT1, glitchFilter)
-
+# Setup GPIO mode
+GPIO.setmode(GPIO.BCM)
+# Configure GPIO input
+GPIO.setup(FLOATLOW, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(FLOATMID, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(FLOATHIGH, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(FLOATOVER, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # Callback when connecting to the MQTT broker
 def on_connect(client, userdata, flags, rc):
@@ -50,8 +53,6 @@ def on_message(client, data, msg):
         print("Received message: LED = ", int(msg.payload))
         
 
-
-
 # Setup MQTT client and callbacks
 client = mqtt.Client()
 client.username_pw_set(USERNAME, password=PASSWORD)
@@ -64,26 +65,26 @@ client.connect(BROKER, PORT, 60)
 client.subscribe(TOPIC, qos=QOS)
 client.loop_start()
 
-def levelListener(gpio, level, tick):
-    pass
+def levelListener(channel):
+    if channel == FLOATLOW:
+        print("FLOATLOW")
+    elif channel == FLOATMID:
+        print("FLOATMID")
+    elif channel == FLOATHIGH:
+        print("FLOATHIGH")
+    elif channel == FLOATOVER:
+        print("****the sump pump is overflowing!****")
 
-
-pi.callback(21, pigpio.RISING_EDGE, levelListener)
-
+GPIO.add_event_detect(FLOATLOW, GPIO.RISING, callback=levelListener, bouncetime=100)
+GPIO.add_event_detect(FLOATMID, GPIO.RISING, callback=levelListener, bouncetime=100)
+GPIO.add_event_detect(FLOATHIGH, GPIO.RISING, callback=levelListener, bouncetime=100)
+GPIO.add_event_detect(FLOATOVER, GPIO.RISING, callback=levelListener, bouncetime=100)
 
 try:
     while True:
-        # if state == operational:
-        #     client.publish(TOPIC, 1)
-        # elif state == powerOutage:
-        #     client.publish(TOPIC, 2)
-        # else:
-        #     client.publish(TOPIC, 3)
-
-
         time.sleep(MAIN_THREAD_DELAY)
 
 except KeyboardInterrupt:
     print("\nDone")
-    # GPIO.cleanup()
+    GPIO.cleanup()
     client.disconnect()

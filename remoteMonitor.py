@@ -11,8 +11,13 @@ CERTS = '/etc/ssl/certs/ca-certificates.crt'
 PORT = 8883
 QOS = 0
 
+EMAIL = "puntsumppump@gmail.com"
+EMAILPASSWORD = "idontknow11093"
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+
 MAIN_THREAD_DELAY = 5
-TIMERLEN = 6
+TIMERLEN = 21
 
 NORMAL = 1
 OVERFLOWING = 2
@@ -109,6 +114,7 @@ def on_message(client, data, msg):
                 t.start()
                 turnOneLEDOn(LEDOVER)
                 #sendEmail()
+                send_emails.sendEmail(EMAIL, EMAILPASSWORD, EMAIL, "SUMP PUMP OVERFLOWING!!!", "", OUTPUT_FILE, SMTP_SERVER, SMTP_PORT)
                 print("the pump is overflowing LEAVE NOW, sending email")
             elif message == "connected":
                 t.cancel()

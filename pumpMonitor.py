@@ -12,12 +12,19 @@ CERTS = '/etc/ssl/certs/ca-certificates.crt'
 PORT = 8883
 QOS = 0
 
+EMAIL = "puntsumppump@gmail.com"
+EMAILPASSWORD = "idontknow11093"
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+
+global server
+# server = send_emails.connectToEmail(EMAIL, EMAILPASSWORD, SMTP_SERVER, SMTP_PORT)
+
 MAIN_THREAD_DELAY = 10
-TIMERLEN = 5
+TIMERLEN = 20
 global t
 
 def timeout():
-    print("time expired")
     client.publish(TOPIC, "connected")    
 
 t = threading.Timer(TIMERLEN, timeout)
@@ -55,7 +62,7 @@ def on_connect(client, userdata, flags, rc):
 
 # Callback when a message is published
 def on_publish(client, userdata, mid):
-    print("MQTT data published")
+    # print("MQTT data published")
     global t
     t.cancel()
     t = threading.Timer(TIMERLEN, timeout)
@@ -80,26 +87,35 @@ client.connect(BROKER, PORT, 60)
 client.subscribe(TOPIC, qos=QOS)
 client.loop_start()
 
-def levelListener(channel):    
-    if channel == FLOATLOW:
-        client.publish(TOPIC, "low")
-        print("FLOATLOW")
-    elif channel == FLOATMID:
-        client.publish(TOPIC, "mid")
-        print("FLOATMID")
-    elif channel == FLOATHIGH:
-        client.publish(TOPIC, "high")
-        print("FLOATHIGH")
-    elif channel == FLOATOVER:
-        client.publish(TOPIC, "over")
-        print("****the sump pump is overflowing!****")
-        #TODO: send email
+def levelListener(channel):
+
+    print(GPIO.input(channel))
+
+
+
+
+    # if channel == FLOATLOW:
+    #     client.publish(TOPIC, "low")
+    #     print("FLOATLOW")
+    # elif channel == FLOATMID:
+    #     client.publish(TOPIC, "mid")
+    #     print("FLOATMID")
+    # elif channel == FLOATHIGH:
+    #     client.publish(TOPIC, "high")
+    #     print("FLOATHIGH")
+    # elif channel == FLOATOVER:
+    #     client.publish(TOPIC, "over")
+    #     print("****the sump pump is overflowing!****")
+    #     # send_emails.sendEmail(EMAIL, EMAILPASSWORD, EMAIL, "SUMP PUMP OVERFLOWING!!!", "", "", SMTP_SERVER, SMTP_PORT)
+    #     # send_emails.sendEmail(server, EMAIL, EMAIL, "SUMP PUMP OVERFLOWING!!!", "")
+    #     print("Email Sent")
+
 
 #event detection for float switches
-GPIO.add_event_detect(FLOATLOW, GPIO.FALLING, callback=levelListener, bouncetime=500)
-GPIO.add_event_detect(FLOATMID, GPIO.FALLING, callback=levelListener, bouncetime=500)
-GPIO.add_event_detect(FLOATHIGH, GPIO.FALLING, callback=levelListener, bouncetime=500)
-GPIO.add_event_detect(FLOATOVER, GPIO.FALLING, callback=levelListener, bouncetime=500)
+GPIO.add_event_detect(FLOATLOW, GPIO.BOTH, callback=levelListener, bouncetime=200)
+GPIO.add_event_detect(FLOATMID, GPIO.BOTH, callback=levelListener, bouncetime=200)
+GPIO.add_event_detect(FLOATHIGH, GPIO.BOTH, callback=levelListener, bouncetime=200)
+GPIO.add_event_detect(FLOATOVER, GPIO.BOTH, callback=levelListener, bouncetime=200)
 
 try:
     while True:

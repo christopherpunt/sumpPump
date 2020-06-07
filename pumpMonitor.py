@@ -4,12 +4,13 @@ import RPi.GPIO as GPIO
 import threading
 import send_emails
 
-BROKER = 'iot.cs.calvin.edu'
-USERNAME = "cs300" # Put broker username here
-PASSWORD = "safeIoT"
+BROKER = 'mqtt.eclipse.org'
+# USERNAME = "cs300" # Put broker username here
+# PASSWORD = "safeIoT"
 TOPIC = 'chris/pump'
-CERTS = '/etc/ssl/certs/ca-certificates.crt'
-PORT = 8883
+# CERTS = '/etc/ssl/certs/ca-certificates.crt'
+PORT = 1883
+# PORT = 8883
 QOS = 0
 
 EMAIL = "puntsumppump@gmail.com"
@@ -18,10 +19,10 @@ SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
 global server
-# server = send_emails.connectToEmail(EMAIL, EMAILPASSWORD, SMTP_SERVER, SMTP_PORT)
+server = send_emails.connectToEmail(EMAIL, EMAILPASSWORD, SMTP_SERVER, SMTP_PORT)
 
 MAIN_THREAD_DELAY = 10
-TIMERLEN = 20
+TIMERLEN = 10
 global t
 
 def timeout():
@@ -62,7 +63,7 @@ def on_connect(client, userdata, flags, rc):
 
 # Callback when a message is published
 def on_publish(client, userdata, mid):
-    # print("MQTT data published")
+    print("MQTT data published")
     global t
     t.cancel()
     t = threading.Timer(TIMERLEN, timeout)
@@ -76,8 +77,8 @@ def on_message(client, data, msg):
 
 # Setup MQTT client and callbacks
 client = mqtt.Client()
-client.username_pw_set(USERNAME, password=PASSWORD)
-client.tls_set(CERTS)
+# client.username_pw_set(USERNAME, password=PASSWORD)
+# client.tls_set(CERTS)
 client.on_connect = on_connect
 client.on_message = on_message
 client.on_publish = on_publish
@@ -90,8 +91,36 @@ client.loop_start()
 def levelListener(channel):
 
     print(GPIO.input(channel))
+    #flip the inputs
+    if GPIO.input(channel) == 0:
+        input = 1
+    elif GPIO.input(channel) == 1:
+        input = 0
 
-
+    if channel == FLOATLOW and input == 0:
+        client.publish(TOPIC, "lowoff")
+        print("lowoff")
+    elif channel == FLOATLOW and input == 1:
+        client.publish(TOPIC, "lowon")
+        print("lowon")
+    elif channel == FLOATMID and input == 0:
+        client.publish(TOPIC, "midoff")
+        print("midoff")
+    elif channel == FLOATMID and input == 1:
+        client.publish(TOPIC, "midon")
+        print("midon")
+    elif channel == FLOATHIGH and input == 0:
+        client.publish(TOPIC, "highoff")
+        print("highoff")
+    elif channel == FLOATHIGH and input == 1:
+        client.publish(TOPIC, "highon")
+        print("highon")
+    elif channel == FLOATOVER and input == 0:
+        client.publish(TOPIC, "overoff")
+        print("overoff")
+    elif channel == FLOATOVER and input == 1:
+        client.publish(TOPIC, "overon")
+        print("overon")
 
 
     # if channel == FLOATLOW:
